@@ -19,6 +19,99 @@ def handle_hello():
     }
     return jsonify(response_body), 200
 
+@api.route("/users/<int:user_id>", methods=["GET"])
+def get_user(user_id):
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(user.serialize()), 200
+
+@api.route("/users", methods=["POST"])
+def create_user():
+    data = request.json
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    username = data.get("username")
+    firstname = data.get("firstname")
+    lastname = data.get("lastname")
+    email = data.get("email")
+    password = data.get("password")
+    image = data.get("image")
+
+    if not username or not firstname or not lastname or not email or not password:
+        return jsonify({"error": "username, firstname, lastname, email and password are required"}), 400
+
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"error": "Email already exists"}), 400
+
+    new_user = User(
+        username=username,
+        firstname=firstname,
+        lastname=lastname,
+        email=email,
+        password=password,
+        image=image
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({
+        "message": "User created successfully",
+        "user": new_user.serialize()
+    }), 201
+
+
+@api.route("/users/<int:user_id>", methods=["PUT"])
+def update_user(user_id):
+    data = request.json
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    new_email = data.get("email")
+    if new_email and new_email != user.email:
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user:
+            return jsonify({"error": "Email already exists"}), 400
+
+    user.username = data.get("username", user.username)
+    user.firstname = data.get("firstname", user.firstname)
+    user.lastname = data.get("lastname", user.lastname)
+    user.email = data.get("email", user.email)
+    user.password = data.get("password", user.password)
+    user.image = data.get("image", user.image)
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "User updated successfully",
+        "user": user.serialize()
+    }), 200
+
+
+@api.route("/users/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({"message": "User deleted successfully"}), 200
+
 
 @api.route("/shirts", methods=["GET"])
 def get_shirts():
