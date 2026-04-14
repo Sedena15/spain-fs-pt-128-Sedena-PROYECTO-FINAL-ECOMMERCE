@@ -12,7 +12,7 @@ import { Demo } from "./pages/Demo";
 import { ProductDetail } from "./pages/ProductDetail";
 import { Profile } from "./pages/Profile";
 import { EditProfile } from "./pages/EditProfile";
-import { Checkout } from "./pages/Checkout";
+import { CheckOut } from "./pages/CheckOut";
 import { Success } from "./pages/Success";
 
 export const router = createBrowserRouter(
@@ -33,7 +33,7 @@ export const router = createBrowserRouter(
         <Route path="/product/:id" element={<ProductDetail />} />
 			  <Route path="/profile/:id" element={<Profile />} />
 			  <Route path="/profile/:id/edit" element={<EditProfile />} />
-			  <Route path="/checkout" element={<Checkout />} />
+			  <Route path="/checkout" element={<CheckOut />} />
 			  <Route path="/success" element={<Success />} />
       </Route>
     )
