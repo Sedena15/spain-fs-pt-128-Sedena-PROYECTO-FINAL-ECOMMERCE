@@ -1,40 +1,42 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 
-export const Navbar = ({ onOpenLogin, onOpenRegister, onOpenCart, loggedUser, onLogout }) => {
+export const Navbar = ({ onOpenLogin, onOpenRegister, onOpenCart, onLogout }) => {
+	const { store } = useGlobalReducer();
+
 	return (
-		<nav className="navbar navbar-expand-lg bg-light px-4 py-3 border-bottom">
-			<div className="container-fluid">
-				<Link className="navbar-brand fw-bold" to="/">
-					MARCA
-				</Link>
+		<nav className="navbar-pro">
+			<Link className="nav-logo" to="/">
+				MARCA
+			</Link>
 
-				<div className="d-flex gap-2 align-items-center">
-					{loggedUser ? (
-						<>
-							<Link className="btn btn-outline-dark" to={`/profile/${loggedUser.id}`}>
-								Mi perfil
-							</Link>
-							<button className="btn btn-dark" onClick={onLogout}>
-								Cerrar sesión
-							</button>
-						</>
-					) : (
-						<>
-							<button className="btn btn-outline-dark" onClick={onOpenLogin}>
-								Iniciar sesión
-							</button>
+			<div className="nav-actions">
+				{store.user ? (
+					<>
+						<Link className="btn-outline" to={`/profile/${store.user.id}`}>
+							Mi perfil
+						</Link>
 
-							<button className="btn btn-dark" onClick={onOpenRegister}>
-								Registrarse
-							</button>
-						</>
-					)}
+						<button className="btn-dark" onClick={onLogout}>
+							Cerrar sesión
+						</button>
+					</>
+				) : (
+					<>
+						<button className="btn-outline" onClick={onOpenLogin}>
+							Iniciar sesión
+						</button>
 
-					<button className="btn btn-secondary" onClick={onOpenCart}>
-						Carrito
-					</button>
-				</div>
+						<button className="btn-dark" onClick={onOpenRegister}>
+							Registrarse
+						</button>
+					</>
+				)}
+
+				<button className="btn-cart" onClick={onOpenCart}>
+					Carrito
+				</button>
 			</div>
 		</nav>
 	);

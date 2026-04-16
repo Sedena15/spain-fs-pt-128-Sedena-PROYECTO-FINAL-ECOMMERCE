@@ -1,37 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { getCartByUserId,updateCartItem, deleteCartItem }  from "../../Services/BackendServices";
-
+import { useNavigate } from "react-router-dom";
+import {
+	getCartByUserId,
+	updateCartItem,
+	deleteCartItem
+} from "../../Services/BackendServices.js";
 
 export const CartModal = ({ isOpen, onClose }) => {
 	const [cart, setCart] = useState(null);
+	const navigate = useNavigate();
 
 	const loadCart = async () => {
-		const data = await getCartByUserId(1);
+		const savedUser = JSON.parse(localStorage.getItem("user"));
+
+		if (!savedUser) {
+			setCart({ items: [] });
+			return;
+		}
+
+		const data = await getCartByUserId(savedUser.id);
 
 		if (!data.error) {
 			setCart(data);
 		}
 	};
-    const handleIncrease = async (item) => {
-	await updateCartItem(item.id, {
-		quantity: item.quantity + 1
-	});
-	loadCart();
-};
-
-const handleDecrease = async (item) => {
-	if (item.quantity > 1) {
-		await updateCartItem(item.id, {
-			quantity: item.quantity - 1
-		});
-		loadCart();
-	}
-};
-
-const handleDelete = async (item) => {
-	await deleteCartItem(item.id);
-	loadCart();
-};
 
 	useEffect(() => {
 		if (isOpen) {
@@ -39,56 +31,103 @@ const handleDelete = async (item) => {
 		}
 	}, [isOpen]);
 
+	const handleIncrease = async (item) => {
+		await updateCartItem(item.id, {
+			quantity: item.quantity + 1
+		});
+		loadCart();
+	};
+
+	const handleDecrease = async (item) => {
+		if (item.quantity > 1) {
+			await updateCartItem(item.id, {
+				quantity: item.quantity - 1
+			});
+			loadCart();
+		}
+	};
+
+	const handleDelete = async (item) => {
+		await deleteCartItem(item.id);
+		loadCart();
+	};
+
+	const total =
+		cart?.items?.reduce((acc, item) => acc + item.price * item.quantity, 0) || 0;
+
+	if (!isOpen) return null;
+
 	return (
 		<>
-			<div
-				className={`cart-overlay ${isOpen ? "open" : ""}`}
-				onClick={onClose}
-			></div>
+			<div className="cartpro-overlay" onClick={onClose}></div>
 
-			<div className={`cart-panel ${isOpen ? "open" : ""}`}>
-				<div className="d-flex justify-content-between align-items-center mb-4">
-					<h2 className="m-0">Carrito</h2>
-					<button className="btn btn-sm btn-dark" onClick={onClose}>
-						X
+			<aside className="cartpro-panel">
+				<div className="cartpro-header">
+					<div>
+						<p className="cartpro-tag">Tu selección</p>
+						<h2 className="cartpro-title">Carrito</h2>
+					</div>
+
+					<button className="cartpro-close-btn" onClick={onClose}>
+						×
 					</button>
 				</div>
 
-				{cart && cart.items.length > 0 ? (
-					cart.items.map((item) => (
-						<div key={item.id} className="border-bottom pb-3 mb-3">
-							<h5>{item.shirt_name}</h5>
-							<p className="mb-1">Talla: {item.size}</p>
-							<p className="mb-1">Precio: {item.price}€</p>
-							<div className="d-flex align-items-center gap-2 mt-2">
+				<div className="cartpro-body">
+					{cart && cart.items.length > 0 ? (
+						cart.items.map((item) => (
+							<div key={item.id} className="cartpro-item">
+								<img
+									src={item.image || "https://i.pravatar.cc/200?img=22"}
+									alt={item.shirt_name}
+									className="cartpro-item-image"
+								/>
 
-	                        <button
-		                        className="btn btn-outline-dark btn-sm"
-		                            onClick={() => handleDecrease(item)}>
-		                            -
-	                        </button>
+								<div className="cartpro-item-info">
+									<h4 className="cartpro-item-name">{item.shirt_name}</h4>
+									<p className="cartpro-item-meta">Talla: {item.size}</p>
+									<p className="cartpro-item-price">{item.price}€</p>
 
-                        	<span>{item.quantity}</span>
+									<div className="cartpro-actions">
+										<div className="cartpro-qty">
+											<button onClick={() => handleDecrease(item)}>-</button>
+											<span>{item.quantity}</span>
+											<button onClick={() => handleIncrease(item)}>+</button>
+										</div>
 
-	                            <button
-		                            className="btn btn-outline-dark btn-sm"
-		                                onClick={() => handleIncrease(item)}>
-		                                +
-	                            </button>
+										<button
+											className="cartpro-delete-btn"
+											onClick={() => handleDelete(item)}
+										>
+											Eliminar
+										</button>
+									</div>
+								</div>
+							</div>
+						))
+					) : (
+						<p className="cartpro-empty">Tu carrito está vacío.</p>
+					)}
+				</div>
 
-	                        <button
-		                        className="btn btn-danger btn-sm ms-auto"
-		                            onClick={() => handleDelete(item)}>
-		                             X
-	                        </button>
+				<div className="cartpro-footer">
+					<div className="cartpro-total">
+						<span>Total</span>
+						<strong>{total}€</strong>
+					</div>
 
-                            </div>
-						</div>
-					))
-				) : (
-					<p>El carrito está vacío.</p>
-				)}
-			</div>
+					<button
+						className="cartpro-checkout-btn"
+						onClick={() => {
+							onClose();
+							navigate("/checkout");
+						}}
+						disabled={!cart || cart.items.length === 0}
+					>
+						Ir al pago
+					</button>
+				</div>
+			</aside>
 		</>
 	);
 };

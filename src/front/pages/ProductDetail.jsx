@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react"
-import { useParams} from "react-router-dom";
-import { getShirtById, addToCart} from "../../Services/BackendServices";
-
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getShirtById, addToCart } from "../../Services/BackendServices.js";
 
 export const ProductDetail = () => {
 	const { id } = useParams();
@@ -13,6 +12,7 @@ export const ProductDetail = () => {
 
 		if (!data.error) {
 			setShirt(data);
+
 			if (data.variants && data.variants.length > 0) {
 				setSelectedVariant(data.variants[0]);
 			}
@@ -26,8 +26,15 @@ export const ProductDetail = () => {
 	const handleAddToCart = async () => {
 		if (!selectedVariant) return;
 
+		const savedUser = JSON.parse(localStorage.getItem("user"));
+
+		if (!savedUser) {
+			alert("Debes iniciar sesión para añadir productos al carrito");
+			return;
+		}
+
 		const data = await addToCart({
-			user_id: 1,
+			user_id: savedUser.id,
 			shirt_variant_id: selectedVariant.id,
 			quantity: 1
 		});
@@ -40,41 +47,56 @@ export const ProductDetail = () => {
 	}
 
 	return (
-		<div className="container mt-5">
-			<div className="row">
-				<div className="col-md-6">
+		<section className="detail-page">
+			<div className="detail-back-wrapper">
+				<button className="detail-back-btn" onClick={() => window.history.back()}>
+					← Volver
+				</button>
+			</div>
+
+			<div className="detail-layout">
+				<div className="detail-image-side">
 					<img
-						src={shirt.image || "https://via.placeholder.com/400"}
-						className="img-fluid"
+						src={shirt.image || "https://i.pravatar.cc/500?img=20"}
 						alt={shirt.name}
+						className="detail-image"
 					/>
 				</div>
 
-				<div className="col-md-6">
-					<h2>{shirt.name}</h2>
-					<p>{shirt.description}</p>
+				<div className="detail-info-side">
+					<p className="detail-label">Camiseta</p>
+					<h1 className="detail-title">{shirt.name}</h1>
+					<p className="detail-description">{shirt.description}</p>
 
-					<h4 className="mt-3">Tallas:</h4>
-
-					<div className="d-flex gap-2 flex-wrap mb-3">
-						{shirt.variants?.map((variant) => (
-							<button
-								key={variant.id}
-								className={`btn ${
-									selectedVariant?.id === variant.id ? "btn-dark" : "btn-outline-dark"
-								}`}
-								onClick={() => setSelectedVariant(variant)}
-							>
-								{variant.size} - {variant.price}€
-							</button>
-						))}
+					<div className="detail-price-block">
+						<span className="detail-price">
+							{selectedVariant ? `${selectedVariant.price}€` : "Sin precio"}
+						</span>
 					</div>
 
-					<button className="btn btn-dark" onClick={handleAddToCart}>
+					<div className="detail-size-section">
+						<p className="detail-size-label">Talla</p>
+
+						<div className="detail-size-options">
+							{shirt.variants?.map((variant) => (
+								<button
+									key={variant.id}
+									className={`detail-size-btn ${
+										selectedVariant?.id === variant.id ? "active" : ""
+									}`}
+									onClick={() => setSelectedVariant(variant)}
+								>
+									{variant.size}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<button className="detail-add-btn" onClick={handleAddToCart}>
 						Añadir al carrito
 					</button>
 				</div>
 			</div>
-		</div>
+		</section>
 	);
 };

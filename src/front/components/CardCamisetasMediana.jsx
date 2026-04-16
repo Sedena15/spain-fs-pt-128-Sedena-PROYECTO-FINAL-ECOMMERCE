@@ -5,22 +5,26 @@ export const CardCamisetasMediana = ({ shirt }) => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="col-md-4 mb-4">
-			<div className="card h-100 shadow-sm">
-				<img
-					src={shirt.image || "https://via.placeholder.com/300"}
-					className="card-img-top"
-					alt={shirt.name}
-					style={{ objectFit: "cover", height: "250px" }}
-				/>
+		<div className="product-col">
+			<div className="product-card" onClick={() => navigate(`/product/${shirt.id}`)}>
+				<div className="product-image-wrapper">
+					<img
+						src={shirt.image || "https://i.pravatar.cc/400?img=12"}
+						alt={shirt.name}
+						className="product-image"
+					/>
+				</div>
 
-				<div className="card-body d-flex flex-column">
-					<h5 className="card-title">{shirt.name}</h5>
-					<p className="card-text">{shirt.description}</p>
+				<div className="product-info">
+					<h3 className="product-name">{shirt.name}</h3>
+					<p className="product-description">{shirt.description}</p>
 
 					<button
-						className="btn btn-dark mt-auto"
-						onClick={() => navigate(`/product/${shirt.id}`)}
+						className="product-button"
+						onClick={(e) => {
+							e.stopPropagation();
+							navigate(`/product/${shirt.id}`);
+						}}
 					>
 						Ver producto
 					</button>

@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { registerUser, loginUser } from "../../Services/BackendServices.js";
+import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 
-export const LoginRegisterModal = ({ isOpen, onClose, initialTab, onLogin }) => {
+export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 	const [activeTab, setActiveTab] = useState(initialTab);
-
-	useEffect(() => {
-		if (isOpen) {
-			setActiveTab(initialTab);
-		}
-	}, [initialTab, isOpen]);
+	const { dispatch } = useGlobalReducer();
 
 	const [loginData, setLoginData] = useState({
 		email: "",
@@ -25,6 +21,13 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab, onLogin }) => 
 	});
 
 	const [message, setMessage] = useState("");
+
+	useEffect(() => {
+		if (isOpen) {
+			setActiveTab(initialTab);
+			setMessage("");
+		}
+	}, [initialTab, isOpen]);
 
 	const handleLoginChange = (event) => {
 		const { name, value } = event.target;
@@ -52,25 +55,38 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab, onLogin }) => 
 			return;
 		}
 
+		if (data.user) {
+			localStorage.setItem("user", JSON.stringify(data.user));
+			dispatch({
+				type: "set_user",
+				payload: data.user
+			});
+		}
+
 		setMessage("Usuario registrado correctamente");
+		onClose();
 	};
 
 	const handleLoginSubmit = async (event) => {
-	event.preventDefault();
+		event.preventDefault();
 
-	const data = await loginUser(loginData);
+		const data = await loginUser(loginData);
 
-	if (data?.error) {
-		setMessage("Error al iniciar sesión");
-		return;
-	}
+		if (data?.error) {
+			setMessage("Error al iniciar sesión");
+			return;
+		}
 
-	localStorage.setItem("user", JSON.stringify(data.user));
-	onLogin(data.user);
-	setMessage("Inicio de sesión correcto");
-	onClose();
-};
+		localStorage.setItem("user", JSON.stringify(data.user));
 
+		dispatch({
+			type: "set_user",
+			payload: data.user
+		});
+
+		setMessage("Inicio de sesión correcto");
+		onClose();
+	};
 
 	if (!isOpen) return null;
 
@@ -82,6 +98,13 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab, onLogin }) => 
 				<button className="loginregister-close-btn" onClick={onClose}>
 					×
 				</button>
+
+				<div className="loginregister-header">
+					<p className="loginregister-tag">Cuenta</p>
+					<h2 className="loginregister-title">
+						{activeTab === "login" ? "Bienvenido de nuevo" : "Crea tu cuenta"}
+					</h2>
+				</div>
 
 				<div className="loginregister-tabs">
 					<button
@@ -105,111 +128,111 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab, onLogin }) => 
 					</button>
 				</div>
 
-
-
 				{activeTab === "login" ? (
-					<form onSubmit={handleLoginSubmit}>
-						<div className="mb-3">
-							<label className="form-label">Email</label>
+					<form onSubmit={handleLoginSubmit} className="loginregister-form">
+						<div className="loginregister-group">
+							<label>Email</label>
 							<input
 								type="email"
-								className="form-control"
 								name="email"
 								value={loginData.email}
 								onChange={handleLoginChange}
+								placeholder="hola@correo.com"
 							/>
 						</div>
 
-						<div className="mb-3">
-							<label className="form-label">Contraseña</label>
+						<div className="loginregister-group">
+							<label>Contraseña</label>
 							<input
 								type="password"
-								className="form-control"
 								name="password"
 								value={loginData.password}
 								onChange={handleLoginChange}
+								placeholder="••••••••"
 							/>
 						</div>
 
-						<button type="submit" className="btn btn-dark w-100">
+						<button type="submit" className="loginregister-submit-btn">
 							Entrar
 						</button>
 					</form>
 				) : (
-					<form onSubmit={handleRegisterSubmit}>
-						<div className="mb-3">
-							<label className="form-label">Username</label>
+					<form onSubmit={handleRegisterSubmit} className="loginregister-form">
+						<div className="loginregister-two-cols">
+							<div className="loginregister-group">
+								<label>Nombre</label>
+								<input
+									type="text"
+									name="firstname"
+									value={registerData.firstname}
+									onChange={handleRegisterChange}
+									placeholder="Ana"
+								/>
+							</div>
+
+							<div className="loginregister-group">
+								<label>Apellidos</label>
+								<input
+									type="text"
+									name="lastname"
+									value={registerData.lastname}
+									onChange={handleRegisterChange}
+									placeholder="García"
+								/>
+							</div>
+						</div>
+
+						<div className="loginregister-group">
+							<label>Username</label>
 							<input
 								type="text"
-								className="form-control"
 								name="username"
 								value={registerData.username}
 								onChange={handleRegisterChange}
+								placeholder="tu_usuario"
 							/>
 						</div>
 
-						<div className="mb-3">
-							<label className="form-label">Nombre</label>
-							<input
-								type="text"
-								className="form-control"
-								name="firstname"
-								value={registerData.firstname}
-								onChange={handleRegisterChange}
-							/>
-						</div>
-
-						<div className="mb-3">
-							<label className="form-label">Apellidos</label>
-							<input
-								type="text"
-								className="form-control"
-								name="lastname"
-								value={registerData.lastname}
-								onChange={handleRegisterChange}
-							/>
-						</div>
-
-						<div className="mb-3">
-							<label className="form-label">Email</label>
+						<div className="loginregister-group">
+							<label>Email</label>
 							<input
 								type="email"
-								className="form-control"
 								name="email"
 								value={registerData.email}
 								onChange={handleRegisterChange}
+								placeholder="hola@correo.com"
 							/>
 						</div>
 
-						<div className="mb-3">
-							<label className="form-label">Contraseña</label>
+						<div className="loginregister-group">
+							<label>Contraseña</label>
 							<input
 								type="password"
-								className="form-control"
 								name="password"
 								value={registerData.password}
 								onChange={handleRegisterChange}
+								placeholder="••••••••"
 							/>
 						</div>
 
-						<div className="mb-3">
-							<label className="form-label">Imagen</label>
+						<div className="loginregister-group">
+							<label>Imagen</label>
 							<input
 								type="text"
-								className="form-control"
 								name="image"
 								value={registerData.image}
 								onChange={handleRegisterChange}
+								placeholder="URL de la imagen"
 							/>
 						</div>
 
-						<button type="submit" className="btn btn-dark w-100">
+						<button type="submit" className="loginregister-submit-btn">
 							Crear cuenta
 						</button>
 					</form>
 				)}
 
-				{message && <p className="mt-3 text-center">{message}</p>}
+				{message && <p className="loginregister-message">{message}</p>}
 			</div>
 		</>
 	);
