@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import request, jsonify, Blueprint
-from api.models import db, User, Shirt, Cart, CartItem, ShirtVariant
+from src.api.models import db, User, Shirt, Cart, CartItem, ShirtVariant
 import os
 import stripe
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
