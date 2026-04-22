@@ -46,26 +46,26 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 	};
 
 	const handleRegisterSubmit = async (event) => {
-		event.preventDefault();
+	event.preventDefault();
 
-		const data = await registerUser(registerData);
+	const data = await registerUser(registerData);
 
-		if (data.error) {
-			setMessage("Error al registrarse");
-			return;
-		}
+	if (data.error) {
+		setMessage(data.data?.error || "Error al registrarse");
+		return;
+	}
 
-		if (data.user) {
-			localStorage.setItem("user", JSON.stringify(data.user));
-			dispatch({
-				type: "set_user",
-				payload: data.user
-			});
-		}
+	localStorage.setItem("user", JSON.stringify(data.user));
+	localStorage.setItem("token", data.token);
 
-		setMessage("Usuario registrado correctamente");
-		onClose();
-	};
+	dispatch({
+		type: "set_user",
+		payload: data.user
+	});
+
+	setMessage("Usuario registrado correctamente");
+	onClose();
+};
 
 	const handleLoginSubmit = async (event) => {
 		event.preventDefault();

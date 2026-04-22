@@ -6,11 +6,12 @@ from src.api.models import db, User, Shirt, Cart, CartItem, ShirtVariant
 import os
 import stripe
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from seed_shirts import seed_shirts
 
 api = Blueprint('api', __name__)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-print("STRIPE KEY:", os.getenv("STRIPE_SECRET_KEY"))
+
 
 
 @api.route('/hello', methods=['POST', 'GET'])
@@ -55,21 +56,26 @@ def create_user():
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({"error": "Email already exists"}), 400
-
+    
     new_user = User(
         username=username,
         firstname=firstname,
         lastname=lastname,
         email=email,
-        password=password,
         image=image
     )
+
+    new_user.set_password(password)
 
     db.session.add(new_user)
     db.session.commit()
 
+  
+    access_token = create_access_token(identity=str(new_user.id))
+
     return jsonify({
         "message": "User created successfully",
+        "token": access_token,   
         "user": new_user.serialize()
     }), 201
 
@@ -102,8 +108,11 @@ def update_user(user_id):
     user.firstname = data.get("firstname", user.firstname)
     user.lastname = data.get("lastname", user.lastname)
     user.email = data.get("email", user.email)
-    user.password = data.get("password", user.password)
     user.image = data.get("image", user.image)
+
+    new_password = data.get("password")
+    if new_password:
+        user.set_password(new_password)
 
     db.session.commit()
 
@@ -111,7 +120,6 @@ def update_user(user_id):
         "message": "User updated successfully",
         "user": user.serialize()
     }), 200
-
 @api.route("/users/<int:user_id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(user_id):
@@ -153,9 +161,9 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    user = User.query.filter_by(email=email, password=password).first()
+    user = User.query.filter_by(email=email).first()
 
-    if not user:
+    if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
 
     access_token = create_access_token(identity=str(user.id))
@@ -166,8 +174,10 @@ def login():
         "user": user.serialize()
     }), 200
 
+
 @api.route("/shirts", methods=["GET"])
 def get_shirts():
+    seed_shirts()
     shirts = Shirt.query.all()
     return jsonify([shirt.serialize() for shirt in shirts]), 200
 

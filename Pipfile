@@ -22,6 +22,8 @@ sqlalchemy = "*"
 stripe = "*"
 flask-jwt-extended = "*"
 tomli = "*"
+flask-bcrypt = "*"
+
 [requires]
 python_version = "3.10"
 

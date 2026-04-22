@@ -1,5 +1,6 @@
-from app import app
+
 from api.models import db, Shirt, ShirtVariant
+
 
 shirts_data = [
     {
@@ -108,14 +109,14 @@ sizes = ["S", "M", "L", "XL"]
 
 prices = [24.99, 26.99, 28.99, 29.99, 31.99]
 
-with app.app_context():
+
+def seed_shirts():
+    existing_shirts = Shirt.query.first()
+
+    if existing_shirts:
+        return
+
     for index, shirt_data in enumerate(shirts_data):
-        existing_shirt = Shirt.query.filter_by(name=shirt_data["name"]).first()
-
-        if existing_shirt:
-            print(f"La camiseta '{shirt_data['name']}' ya existe. Se omite.")
-            continue
-
         new_shirt = Shirt(
             name=shirt_data["name"],
             description=shirt_data["description"],
@@ -135,7 +136,4 @@ with app.app_context():
             )
             db.session.add(variant)
 
-        print(f"Camiseta '{new_shirt.name}' añadida con variantes.")
-
     db.session.commit()
-    print("Seed completado correctamente.")
