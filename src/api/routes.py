@@ -346,8 +346,8 @@ def create_checkout_session(user_id):
         payment_method_types=["card"],
         line_items=line_items,
         mode="payment",
-        success_url="https://opulent-space-chainsaw-697xjjwvp67r2rj65-3000.app.github.dev/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url="https://opulent-space-chainsaw-697xjjwvp67r2rj65-3000.app.github.dev/checkout"
+        success_url="https://sample-service-name-vte4.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url="https://sample-service-name-vte4.onrender.com/checkout"
     )
 
     return jsonify({"url": session.url}), 200
