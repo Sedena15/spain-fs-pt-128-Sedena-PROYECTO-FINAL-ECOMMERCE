@@ -27,7 +27,9 @@ export const HeaderBody = ({ onViewCollection }) => {
 			<div className="hero-right">
 				<div className="hero-img-container">
 					<div className="hero-img-placeholder">
-						<span>Imagen de marca</span>
+						<img
+						src={ "https://chatgpt.com/s/m_6ac54537de8081918a08294907200bd5"}
+						/>
 					</div>
 				</div>
 			</div>
