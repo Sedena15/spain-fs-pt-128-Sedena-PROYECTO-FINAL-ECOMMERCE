@@ -214,3 +214,21 @@ export const createCheckoutSession = async (userId) => {
 
 	return data;
 };
+
+export const getRecommendationAvailability = async () => {
+	const response = await fetch(`${BACKEND_URL}/api/recommendations`);
+	if (!response.ok) return false;
+	const data = await response.json();
+	return data.enabled === true;
+};
+
+export const searchRecommendations = async (query) => {
+	const response = await fetch(`${BACKEND_URL}/api/recommendations`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ query })
+	});
+	const data = await response.json();
+	if (!response.ok) throw new Error(data.error || "No se pudo completar la búsqueda.");
+	return data.products;
+};

@@ -54,3 +54,11 @@ Render sirve el frontend compilado y la API desde el mismo dominio. Configura `D
 
 Proyecto basado en la [plantilla React y Flask de 4Geeks Academy](https://4geeks.com/docs/start/react-flask-template).
 
+
+## Búsqueda de camisetas con IA
+
+Configura `OPENAI_API_KEY` en el backend (en `.env` para desarrollo o en **Environment** del servicio de Render). Puedes definir `OPENAI_MODEL` para usar otro modelo compatible con Structured Outputs. Por defecto se usa `gpt-4.1-mini`.
+
+El buscador admite consultas como «Camiseta negra, talla M, por menos de 30 €». Flask envía la consulta a OpenAI para extraer filtros y devuelve hasta tres camisetas con variantes que cumplan las condiciones y tengan stock. La clave permanece en el servidor y el buscador aparece cuando está configurada.
+
+El endpoint limita las llamadas a OpenAI a 10 por minuto por proceso. Configura el presupuesto de API de tu proyecto por separado si habilitas la búsqueda en la demo pública.

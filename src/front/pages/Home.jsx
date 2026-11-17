@@ -2,10 +2,15 @@ import React, { useEffect, useState, useRef } from "react";
 import { CardCamisetasMediana } from "../components/CardCamisetasMediana.jsx";
 import { HeaderBody } from "../components/HeaderBody.jsx";
 import { BannerSection } from "../components/BannerSection.jsx";
-import { getShirts } from "../../Services/BackendServices.js";
+import { getShirts, getRecommendationAvailability, searchRecommendations } from "../../Services/BackendServices.js";
 
 export const Home = () => {
 	const [shirts, setShirts] = useState([]);
+	const [isSearchEnabled, setIsSearchEnabled] = useState(false);
+	const [query, setQuery] = useState("");
+	const [recommendations, setRecommendations] = useState(null);
+	const [searchError, setSearchError] = useState("");
+	const [isSearching, setIsSearching] = useState(false);
 	const productsRef = useRef(null);
 
 	const loadShirts = async () => {
@@ -18,7 +23,30 @@ export const Home = () => {
 
 	useEffect(() => {
 		loadShirts();
+		getRecommendationAvailability().then(setIsSearchEnabled).catch(() => {});
 	}, []);
+
+	const handleSearch = async (event) => {
+		event.preventDefault();
+		if (!query.trim() || isSearching) return;
+
+		setSearchError("");
+		setIsSearching(true);
+		try {
+			setRecommendations(await searchRecommendations(query.trim()));
+		} catch (error) {
+			setRecommendations(null);
+			setSearchError(error.message);
+		} finally {
+			setIsSearching(false);
+		}
+	};
+
+	const resetSearch = () => {
+		setQuery("");
+		setRecommendations(null);
+		setSearchError("");
+	};
 
 	const scrollToCollection = () => {
 		if (productsRef.current) {
@@ -38,8 +66,39 @@ export const Home = () => {
 					</div>
 				</div>
 
+				{isSearchEnabled && (
+					<form className="catalog-search" onSubmit={handleSearch}>
+						<label htmlFor="catalog-query">Busca camisetas con IA</label>
+						<div className="catalog-search-actions">
+							<input
+								id="catalog-query"
+								type="search"
+								placeholder="Negra, talla M, por menos de 30 €"
+								maxLength={250}
+								value={query}
+								onChange={(event) => setQuery(event.target.value)}
+								required
+							/>
+							<button className="btn-dark" type="submit" disabled={isSearching || !query.trim()}>
+								Buscar
+							</button>
+							{recommendations !== null && (
+								<button className="btn-outline" type="button" onClick={resetSearch} disabled={isSearching}>
+									Ver toda la colección
+								</button>
+							)}
+						</div>
+						{searchError && <p role="alert">{searchError}</p>}
+						<div role="status">
+							{isSearching && "Buscando camisetas…"}
+							{!isSearching && recommendations?.length === 0 && "No hay camisetas disponibles que coincidan."}
+							{!isSearching && recommendations?.length > 0 && `${recommendations.length} recomendaciones`}
+						</div>
+					</form>
+				)}
+
 				<div className="products-grid">
-					{shirts.map((shirt) => (
+					{(recommendations ?? shirts).map((shirt) => (
 						<CardCamisetasMediana key={shirt.id} shirt={shirt} />
 					))}
 				</div>
