@@ -2,6 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+from secrets import token_hex
 from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -27,7 +28,10 @@ app.url_map.strict_slashes = False
 
 CORS(app)
 
-app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+jwt_secret = os.getenv("JWT_SECRET_KEY")
+if ENV == "production" and not jwt_secret:
+    raise RuntimeError("Set JWT_SECRET_KEY before starting the application in production.")
+app.config["JWT_SECRET_KEY"] = jwt_secret or token_hex(32)
 jwt = JWTManager(app)
 
 
@@ -45,7 +49,8 @@ MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
 
 # add the admin
-setup_admin(app)
+if ENV == "development" and os.getenv("ENABLE_LOCAL_ADMIN") == "1":
+    setup_admin(app)
 
 # add the commands
 setup_commands(app)
