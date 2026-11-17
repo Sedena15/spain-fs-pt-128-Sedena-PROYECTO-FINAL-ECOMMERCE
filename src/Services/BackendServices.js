@@ -46,14 +46,16 @@ export const getShirtById = async (shirtId) => {
 // ---------------------
 
 export const registerUser = async (user) => {
+	const isUpload = user instanceof FormData;
 	const response = await fetch(`${BACKEND_URL}/api/users`, {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(user),
+		headers: isUpload ? undefined : { "Content-Type": "application/json" },
+		body: isUpload ? user : JSON.stringify(user),
 	});
 
+	if (response.status === 413) {
+		return { error: true, data: { error: "La foto debe ocupar como máximo 5 MB." } };
+	}
 	const data = await response.json();
 
 	if (!response.ok) {

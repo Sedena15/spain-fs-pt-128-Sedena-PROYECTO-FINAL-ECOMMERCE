@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getUserById, updateUser } from "../../Services/BackendServices.js";
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import { ProfilePhotoField } from "../components/ProfilePhotoField.jsx";
 
 export const EditProfile = () => {
 	const { id } = useParams();
@@ -20,18 +19,7 @@ export const EditProfile = () => {
 
 	const [message, setMessage] = useState("");
 	const [photo, setPhoto] = useState(null);
-	const [photoPreview, setPhotoPreview] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-
-	useEffect(() => {
-		if (!photo) {
-			setPhotoPreview("");
-			return;
-		}
-		const previewUrl = URL.createObjectURL(photo);
-		setPhotoPreview(previewUrl);
-		return () => URL.revokeObjectURL(previewUrl);
-	}, [photo]);
 
 	const loadUser = async () => {
 		const data = await getUserById(id);
@@ -59,18 +47,6 @@ export const EditProfile = () => {
 			...formData,
 			[name]: value
 		});
-	};
-
-	const handlePhotoChange = (event) => {
-		const file = event.target.files[0] ?? null;
-		if (file && (!PHOTO_TYPES.includes(file.type) || file.size > MAX_PHOTO_BYTES)) {
-			event.target.value = "";
-			setPhoto(null);
-			setMessage("Elige una imagen JPG, PNG o WebP de hasta 5 MB.");
-			return;
-		}
-		setPhoto(file);
-		setMessage("");
 	};
 
 	const handleSubmit = async (event) => {
@@ -170,27 +146,13 @@ export const EditProfile = () => {
 						/>
 					</div>
 
-					<div className="editprofile-group">
-						<label htmlFor="profile-photo">Foto de perfil</label>
-						{(photoPreview || formData.image) && (
-							<img
-								className="editprofile-photo"
-								src={photoPreview || formData.image}
-								alt="Vista previa de la foto de perfil"
-								width={96}
-								height={96}
-							/>
-						)}
-						<input
-							id="profile-photo"
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							aria-describedby="profile-photo-formats"
-							onChange={handlePhotoChange}
-							disabled={isSaving}
-						/>
-						<small id="profile-photo-formats">JPG, PNG o WebP, hasta 5 MB.</small>
-					</div>
+					<ProfilePhotoField
+						className="editprofile-group"
+						photo={photo}
+						onPhotoChange={setPhoto}
+						currentImage={formData.image}
+						disabled={isSaving}
+					/>
 
 					<div className="editprofile-actions">
 						<button type="submit" className="profile-btn-dark" disabled={isSaving}>
