@@ -7,6 +7,9 @@ import os
 import stripe
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from seed_shirts import seed_shirts
+from api.recommendations import (
+    RecommendationError, allow_provider_request, interpret_query, recommend_shirts,
+)
 
 api = Blueprint('api', __name__)
 
@@ -180,6 +183,36 @@ def get_shirts():
     seed_shirts()
     shirts = Shirt.query.all()
     return jsonify([shirt.serialize() for shirt in shirts]), 200
+
+
+@api.get("/recommendations")
+def recommendation_availability():
+    return jsonify({"enabled": bool(os.getenv("OPENAI_API_KEY", "").strip())})
+
+
+@api.post("/recommendations")
+def get_recommendations():
+    request.max_content_length = 4096
+    data = request.get_json(silent=True)
+    query = data.get("query") if isinstance(data, dict) else None
+    if not isinstance(query, str) or not 1 <= len(query.strip()) <= 250:
+        return jsonify({"error": "Escribe una consulta de entre 1 y 250 caracteres."}), 400
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        return jsonify({"error": "La búsqueda con IA no está disponible."}), 503
+    if not allow_provider_request():
+        return jsonify({"error": "Hay demasiadas búsquedas. Inténtalo en un minuto."}), 429
+
+    try:
+        filters = interpret_query(query.strip(), api_key, os.getenv("OPENAI_MODEL", "gpt-4.1-mini"))
+    except RecommendationError:
+        return jsonify({"error": "No pudimos interpretar la búsqueda. Inténtalo de nuevo."}), 502
+
+    if not filters["supported"]:
+        return jsonify({"error": "Prueba indicando un color, un estilo, una talla o un precio máximo."}), 422
+
+    return jsonify({"products": recommend_shirts(filters)})
 
 
 @api.route("/shirts/<int:shirt_id>", methods=["GET"])
