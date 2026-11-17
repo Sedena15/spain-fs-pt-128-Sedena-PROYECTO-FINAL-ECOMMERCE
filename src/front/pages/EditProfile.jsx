@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getUserById, updateUser } from "../../Services/BackendServices.js";
 
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export const EditProfile = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
@@ -16,6 +19,19 @@ export const EditProfile = () => {
 	});
 
 	const [message, setMessage] = useState("");
+	const [photo, setPhoto] = useState(null);
+	const [photoPreview, setPhotoPreview] = useState("");
+	const [isSaving, setIsSaving] = useState(false);
+
+	useEffect(() => {
+		if (!photo) {
+			setPhotoPreview("");
+			return;
+		}
+		const previewUrl = URL.createObjectURL(photo);
+		setPhotoPreview(previewUrl);
+		return () => URL.revokeObjectURL(previewUrl);
+	}, [photo]);
 
 	const loadUser = async () => {
 		const data = await getUserById(id);
@@ -45,33 +61,49 @@ export const EditProfile = () => {
 		});
 	};
 
-	const handleSubmit = async (event) => {
-		event.preventDefault();
-
-		const dataToSend = {
-			username: formData.username,
-			firstname: formData.firstname,
-			lastname: formData.lastname,
-			email: formData.email,
-			image: formData.image
-		};
-
-		if (formData.password.trim() !== "") {
-			dataToSend.password = formData.password;
-		}
-
-		const data = await updateUser(id, dataToSend);
-
-		if (data.error) {
-			setMessage("Error al actualizar el perfil");
+	const handlePhotoChange = (event) => {
+		const file = event.target.files[0] ?? null;
+		if (file && (!PHOTO_TYPES.includes(file.type) || file.size > MAX_PHOTO_BYTES)) {
+			event.target.value = "";
+			setPhoto(null);
+			setMessage("Elige una imagen JPG, PNG o WebP de hasta 5 MB.");
 			return;
 		}
+		setPhoto(file);
+		setMessage("");
+	};
 
-		setMessage("Perfil actualizado correctamente");
+	const handleSubmit = async (event) => {
+		event.preventDefault();
+		if (isSaving) return;
 
-		setTimeout(() => {
+		const { username, firstname, lastname, email, password } = formData;
+		const dataToSend = { username, firstname, lastname, email };
+		if (password.trim()) dataToSend.password = password;
+
+		let payload = dataToSend;
+		if (photo) {
+			payload = new FormData();
+			for (const [name, value] of Object.entries(dataToSend)) {
+				payload.append(name, value);
+			}
+			payload.append("photo", photo);
+		}
+
+		setMessage("");
+		setIsSaving(true);
+		try {
+			const data = await updateUser(id, payload);
+			if (data.error) {
+				setMessage(data.data?.error || "Error al actualizar el perfil");
+				return;
+			}
 			navigate(`/profile/${id}`);
-		}, 900);
+		} catch {
+			setMessage("No se pudo guardar el perfil. Inténtalo de nuevo.");
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	return (
@@ -139,19 +171,30 @@ export const EditProfile = () => {
 					</div>
 
 					<div className="editprofile-group">
-						<label>Imagen</label>
+						<label htmlFor="profile-photo">Foto de perfil</label>
+						{(photoPreview || formData.image) && (
+							<img
+								className="editprofile-photo"
+								src={photoPreview || formData.image}
+								alt="Vista previa de la foto de perfil"
+								width={96}
+								height={96}
+							/>
+						)}
 						<input
-							type="text"
-							name="image"
-							value={formData.image}
-							onChange={handleChange}
-							placeholder="URL de la imagen"
+							id="profile-photo"
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							aria-describedby="profile-photo-formats"
+							onChange={handlePhotoChange}
+							disabled={isSaving}
 						/>
+						<small id="profile-photo-formats">JPG, PNG o WebP, hasta 5 MB.</small>
 					</div>
 
 					<div className="editprofile-actions">
-						<button type="submit" className="profile-btn-dark">
-							Guardar cambios
+						<button type="submit" className="profile-btn-dark" disabled={isSaving}>
+							{isSaving ? "Guardando…" : "Guardar cambios"}
 						</button>
 
 						<button
@@ -164,7 +207,7 @@ export const EditProfile = () => {
 					</div>
 				</form>
 
-				{message && <p className="editprofile-message">{message}</p>}
+				{message && <p className="editprofile-message" role="alert">{message}</p>}
 			</div>
 		</section>
 	);

@@ -80,12 +80,19 @@ export const getUserById = async (userId, signal) => {
 };
 
 export const updateUser = async (userId, updatedData) => {
+	const isUpload = updatedData instanceof FormData;
+	const headers = getAuthHeaders();
+	if (isUpload) delete headers["Content-Type"];
+
 	const response = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
 		method: "PUT",
-		headers: getAuthHeaders(),
-		body: JSON.stringify(updatedData)
+		headers,
+		body: isUpload ? updatedData : JSON.stringify(updatedData)
 	});
 
+	if (response.status === 413) {
+		return { error: true, data: { error: "La foto debe ocupar como máximo 5 MB." } };
+	}
 	const data = await response.json();
 
 	if (!response.ok) {

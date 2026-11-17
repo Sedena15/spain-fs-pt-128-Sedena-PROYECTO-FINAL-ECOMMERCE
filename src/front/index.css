@@ -1516,3 +1516,7 @@ button {
 		padding: 1.25rem;
 	}
 }
+.editprofile-photo {
+	border-radius: 50%;
+	object-fit: cover;
+}
