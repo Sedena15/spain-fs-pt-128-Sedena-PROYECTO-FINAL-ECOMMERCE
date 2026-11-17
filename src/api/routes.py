@@ -7,6 +7,7 @@ import os
 import stripe
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from seed_shirts import seed_shirts
+from api.profile_photo import MAX_PHOTO_BYTES, prepare_profile_photo
 
 api = Blueprint('api', __name__)
 
@@ -34,7 +35,7 @@ def get_user(user_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    return jsonify(user.serialize()), 200
+    return jsonify(user.serialize(include_photo=True)), 200
 
 @api.route("/users", methods=["POST"])
 def create_user():
@@ -88,9 +89,15 @@ def update_user(user_id):
     if int(current_user_id) != user_id:
         return jsonify({"error": "Unauthorized"}), 403
 
-    data = request.json
+    upload = None
+    if request.mimetype == "multipart/form-data":
+        request.max_content_length = MAX_PHOTO_BYTES + 64 * 1024
+        data = request.form
+        upload = request.files.get("photo")
+    else:
+        data = request.get_json(silent=True)
 
-    if not data:
+    if not data and upload is None:
         return jsonify({"error": "No data provided"}), 400
 
     user = User.query.get(user_id)
@@ -104,11 +111,19 @@ def update_user(user_id):
         if existing_user:
             return jsonify({"error": "Email already exists"}), 400
 
+    if upload is not None:
+        try:
+            user.profile_photo = prepare_profile_photo(upload)
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+    elif "image" in data and data["image"] != user.image:
+        user.image = data["image"]
+        user.profile_photo = None
+
     user.username = data.get("username", user.username)
     user.firstname = data.get("firstname", user.firstname)
     user.lastname = data.get("lastname", user.lastname)
     user.email = data.get("email", user.email)
-    user.image = data.get("image", user.image)
 
     new_password = data.get("password")
     if new_password:
@@ -118,7 +133,7 @@ def update_user(user_id):
 
     return jsonify({
         "message": "User updated successfully",
-        "user": user.serialize()
+        "user": user.serialize(include_photo=True)
     }), 200
 @api.route("/users/<int:user_id>", methods=["DELETE"])
 @jwt_required()

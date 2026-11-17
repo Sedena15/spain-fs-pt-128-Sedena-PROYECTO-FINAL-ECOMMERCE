@@ -1,5 +1,7 @@
+from base64 import b64encode
+
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, ForeignKey
+from sqlalchemy import String, Boolean, ForeignKey, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from flask_bcrypt import generate_password_hash, check_password_hash 
 
@@ -14,6 +16,8 @@ class User(db.Model):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     image: Mapped[str] = mapped_column(String(255), nullable=True)
 
+    profile_photo: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+
     cart: Mapped[list["Cart"]] = relationship("Cart", back_populates="user")
 
     def set_password(self,password):
@@ -22,14 +26,17 @@ class User(db.Model):
     def check_password(self, password):
       return check_password_hash(self.password_hash, password)  
 
-    def serialize(self):
+    def serialize(self, include_photo=False):
+        image = self.image
+        if include_photo and self.profile_photo:
+            image = "data:image/jpeg;base64," + b64encode(self.profile_photo).decode("ascii")
         return {
             "id": self.id,
             "username": self.username,
             "firstname": self.firstname,
             "lastname": self.lastname,
             "email": self.email,
-            "image": self.image
+            "image": image
         }
 
 class Shirt(db.Model):
