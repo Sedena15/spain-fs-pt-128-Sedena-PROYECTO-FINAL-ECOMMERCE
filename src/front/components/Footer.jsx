@@ -10,7 +10,7 @@ export const Footer = ({ onOpenLogin, onOpenRegister }) => {
 			<div className="footer-pro-grid">
 				<div className="footer-pro-brand">
 					<Link className="footer-pro-logo" to="/">
-						MARCA
+						ELEGACY
 					</Link>
 					<p>
 						Moda consciente para quienes eligen con intención.
@@ -54,7 +54,7 @@ export const Footer = ({ onOpenLogin, onOpenRegister }) => {
 			</div>
 
 			<div className="footer-pro-bottom">
-				<span>© 2026 MARCA. Todos los derechos reservados.</span>
+				<span>© 2026 ELEGACY. Todos los derechos reservados.</span>
 				<span>Hecho con intención · España</span>
 			</div>
 		</footer>

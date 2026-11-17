@@ -8,7 +8,7 @@ export const Navbar = ({ onOpenLogin, onOpenRegister, onOpenCart, onLogout }) =>
 	return (
 		<nav className="navbar-pro">
 			<Link className="nav-logo" to="/">
-				MARCA
+				ELEGACY
 			</Link>
 
 			<div className="nav-actions">

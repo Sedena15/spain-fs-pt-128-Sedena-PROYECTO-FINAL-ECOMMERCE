@@ -1,4 +1,4 @@
-# Tienda de camisetas
+# ELEGACY · Tienda de camisetas
 
 Proyecto final de 4Geeks Academy. Aplicación web full stack con catálogo de camisetas, variantes por talla, perfiles de usuario y carrito persistente.
 
@@ -53,3 +53,4 @@ Para probar el checkout, define `STRIPE_SECRET_KEY` con una clave de prueba de S
 Render sirve el frontend compilado y la API desde el mismo dominio. Configura `DATABASE_URL` y `JWT_SECRET_KEY` en el entorno del servicio. Para habilitar el checkout de prueba, configura también `STRIPE_SECRET_KEY` y `CHECKOUT_FRONTEND_URL` con la URL pública de la tienda.
 
 Proyecto basado en la [plantilla React y Flask de 4Geeks Academy](https://4geeks.com/docs/start/react-flask-template).
+
