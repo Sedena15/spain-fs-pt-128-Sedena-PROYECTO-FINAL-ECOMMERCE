@@ -1,7 +1,7 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint, current_app
 from api.models import db, User, Shirt, Cart, CartItem, ShirtVariant
 import os
 import stripe
@@ -325,8 +325,15 @@ def create_checkout_session(user_id):
     if not cart or len(cart.items) == 0:
         return jsonify({"error": "Cart is empty"}), 400
 
-    if not stripe.api_key:
-        return jsonify({"error": "Stripe secret key not configured"}), 500
+    if not stripe.api_key or not stripe.api_key.startswith("sk_test_"):
+        return jsonify({"error": "Test checkout is unavailable"}), 503
+
+    frontend_url = os.getenv("CHECKOUT_FRONTEND_URL")
+    if not frontend_url and current_app.debug:
+        frontend_url = "http://localhost:3000"
+    if not frontend_url:
+        return jsonify({"error": "Checkout frontend URL not configured"}), 503
+    frontend_url = frontend_url.rstrip("/")
 
     line_items = []
 
@@ -346,8 +353,8 @@ def create_checkout_session(user_id):
         payment_method_types=["card"],
         line_items=line_items,
         mode="payment",
-        success_url="https://sample-service-name-vte4.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url="https://sample-service-name-vte4.onrender.com/checkout"
+        success_url=f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{frontend_url}/checkout"
     )
 
     return jsonify({"url": session.url}), 200
