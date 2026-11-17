@@ -3,7 +3,10 @@
 import {
     createBrowserRouter,
     createRoutesFromElements,
+    Navigate,
+    Outlet,
     Route,
+    useOutletContext,
 } from "react-router-dom";
 import { Layout } from "./pages/Layout";
 import { Home } from "./pages/Home";
@@ -14,6 +17,19 @@ import { Profile } from "./pages/Profile";
 import { EditProfile } from "./pages/EditProfile";
 import { CheckOut } from "./pages/CheckOut";
 import { Success } from "./pages/Success";
+
+import useGlobalReducer from "./hooks/useGlobalReducer.jsx";
+
+const RequireProfileSession = () => {
+    const { store } = useGlobalReducer();
+    const { isRestoringSession } = useOutletContext();
+
+    if (isRestoringSession) {
+        return <p className="text-center mt-5">Comprobando sesión...</p>;
+    }
+
+    return store.user ? <Outlet /> : <Navigate to="/" replace />;
+};
 
 export const router = createBrowserRouter(
     createRoutesFromElements(
@@ -31,8 +47,10 @@ export const router = createBrowserRouter(
         <Route path="/single/:theId" element={ <Single />} />  {/* Dynamic route for single items */}
         <Route path="/demo" element={<Demo />} />
         <Route path="/product/:id" element={<ProductDetail />} />
-			  <Route path="/profile/:id" element={<Profile />} />
-			  <Route path="/profile/:id/edit" element={<EditProfile />} />
+        <Route element={<RequireProfileSession />}>
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/profile/:id/edit" element={<EditProfile />} />
+        </Route>
 			  <Route path="/checkout" element={<CheckOut />} />
 			  <Route path="/success" element={<Success />} />
       </Route>

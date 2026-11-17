@@ -63,16 +63,17 @@ export const registerUser = async (user) => {
 	return data;
 };
 
-export const getUserById = async (userId) => {
+export const getUserById = async (userId, signal) => {
 	const response = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
 		method: "GET",
-		headers: getAuthHeaders()
+		headers: getAuthHeaders(),
+		signal
 	});
 
 	const data = await response.json();
 
 	if (!response.ok) {
-		return { error: true, data };
+		return { error: true, status: response.status, data };
 	}
 
 	return data;
@@ -213,4 +214,3 @@ export const createCheckoutSession = async (userId) => {
 
 	return data;
 };
-
