@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { registerUser, loginUser } from "../../Services/BackendServices.js";
+import { ProfilePhotoField } from "./ProfilePhotoField.jsx";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 
 export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
@@ -16,16 +17,18 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 		firstname: "",
 		lastname: "",
 		email: "",
-		password: "",
-		image: ""
+		password: ""
 	});
 
 	const [message, setMessage] = useState("");
+	const [photo, setPhoto] = useState(null);
+	const [isRegistering, setIsRegistering] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
 			setActiveTab(initialTab);
 			setMessage("");
+			setPhoto(null);
 		}
 	}, [initialTab, isOpen]);
 
@@ -46,26 +49,37 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 	};
 
 	const handleRegisterSubmit = async (event) => {
-	event.preventDefault();
+		event.preventDefault();
+		if (isRegistering) return;
 
-	const data = await registerUser(registerData);
+		let payload = registerData;
+		if (photo) {
+			payload = new FormData();
+			for (const [name, value] of Object.entries(registerData)) {
+				payload.append(name, value);
+			}
+			payload.append("photo", photo);
+		}
 
-	if (data.error) {
-		setMessage(data.data?.error || "Error al registrarse");
-		return;
-	}
+		setMessage("");
+		setIsRegistering(true);
+		try {
+			const data = await registerUser(payload);
+			if (data.error) {
+				setMessage(data.data?.error || "Error al registrarse");
+				return;
+			}
 
-	localStorage.setItem("user", JSON.stringify(data.user));
-	localStorage.setItem("token", data.token);
-
-	dispatch({
-		type: "set_user",
-		payload: data.user
-	});
-
-	setMessage("Usuario registrado correctamente");
-	onClose();
-};
+			localStorage.setItem("user", JSON.stringify(data.user));
+			localStorage.setItem("token", data.token);
+			dispatch({ type: "set_user", payload: data.user });
+			onClose();
+		} catch {
+			setMessage("No se pudo completar el registro. Inténtalo de nuevo.");
+		} finally {
+			setIsRegistering(false);
+		}
+	};
 
 	const handleLoginSubmit = async (event) => {
 		event.preventDefault();
@@ -112,6 +126,7 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 						className={`loginregister-tab ${activeTab === "login" ? "active" : ""}`}
 						onClick={() => {
 							setActiveTab("login");
+							setPhoto(null);
 							setMessage("");
 						}}
 					>
@@ -216,19 +231,15 @@ export const LoginRegisterModal = ({ isOpen, onClose, initialTab }) => {
 							/>
 						</div>
 
-						<div className="loginregister-group">
-							<label>Imagen</label>
-							<input
-								type="text"
-								name="image"
-								value={registerData.image}
-								onChange={handleRegisterChange}
-								placeholder="URL de la imagen"
-							/>
-						</div>
+						<ProfilePhotoField
+							className="loginregister-group"
+							photo={photo}
+							onPhotoChange={setPhoto}
+							disabled={isRegistering}
+						/>
 
-						<button type="submit" className="loginregister-submit-btn">
-							Crear cuenta
+						<button type="submit" className="loginregister-submit-btn" disabled={isRegistering}>
+							{isRegistering ? "Creando cuenta…" : "Crear cuenta"}
 						</button>
 					</form>
 				)}

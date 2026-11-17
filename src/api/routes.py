@@ -37,9 +37,17 @@ def get_user(user_id):
 
     return jsonify(user.serialize(include_photo=True)), 200
 
+def read_profile_payload():
+    if request.mimetype == "multipart/form-data":
+        request.max_content_length = MAX_PHOTO_BYTES + 64 * 1024
+        return request.form, request.files.get("photo")
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else {}, None
+
+
 @api.route("/users", methods=["POST"])
 def create_user():
-    data = request.json
+    data, upload = read_profile_payload()
 
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -66,6 +74,12 @@ def create_user():
         image=image
     )
 
+    if upload is not None:
+        try:
+            new_user.profile_photo = prepare_profile_photo(upload)
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+
     new_user.set_password(password)
 
     db.session.add(new_user)
@@ -89,13 +103,7 @@ def update_user(user_id):
     if int(current_user_id) != user_id:
         return jsonify({"error": "Unauthorized"}), 403
 
-    upload = None
-    if request.mimetype == "multipart/form-data":
-        request.max_content_length = MAX_PHOTO_BYTES + 64 * 1024
-        data = request.form
-        upload = request.files.get("photo")
-    else:
-        data = request.get_json(silent=True)
+    data, upload = read_profile_payload()
 
     if not data and upload is None:
         return jsonify({"error": "No data provided"}), 400
